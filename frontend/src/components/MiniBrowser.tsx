@@ -16,6 +16,8 @@ import { normalizeAddress } from '@/lib/validation';
 import { Toolbar } from './Toolbar';
 import { SandboxedViewport, PagePreservedState } from './SandboxedViewport';
 import { HistoryDrawer } from './HistoryDrawer';
+import { SearchModal } from './SearchModal';
+import { PublishModal } from './PublishModal';
 
 const DEFAULT_HOME_ADDRESS = 'tidepool.zz';
 const DEFAULT_USERS: UserProfile[] = [
@@ -53,6 +55,10 @@ export function MiniBrowser() {
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isPublishOpen, setIsPublishOpen] = useState<boolean>(false);
+  const [publishInitialAddress, setPublishInitialAddress] =
+    useState<string>('');
   const [visits, setVisits] = useState<VisitRecord[]>([]);
 
   const currentSession = sessions[currentUser] || createInitialSession();
@@ -108,6 +114,21 @@ export function MiniBrowser() {
       mounted = false;
     };
   }, [resolveAddress, refreshHistory]);
+
+  // Keyboard shortcuts (Cmd/Ctrl+K for search, Escape to close modals)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+        setIsPublishOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Navigate to a new address (pushes onto stack and truncates forward stack)
   const navigateTo = useCallback(
@@ -261,6 +282,11 @@ export function MiniBrowser() {
     [currentUser],
   );
 
+  const handleOpenPublishForAddress = useCallback((addr: string) => {
+    setPublishInitialAddress(addr);
+    setIsPublishOpen(true);
+  }, []);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       <Toolbar
@@ -280,8 +306,11 @@ export function MiniBrowser() {
         isHistoryOpen={isHistoryOpen}
         onToggleHistory={() => setIsHistoryOpen((o) => !o)}
         historyCount={visits.length}
-        onOpenSearch={() => {}}
-        onOpenPublish={() => {}}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenPublish={() => {
+          setPublishInitialAddress('');
+          setIsPublishOpen(true);
+        }}
       />
 
       <main className="flex-1 flex min-h-0 overflow-hidden relative">
@@ -297,6 +326,7 @@ export function MiniBrowser() {
           onNavigateHome={() => navigateTo(DEFAULT_HOME_ADDRESS, 'link')}
           onGoBack={handleBack}
           canGoBack={canGoBack}
+          onPublishAtAddress={handleOpenPublishForAddress}
         />
 
         <HistoryDrawer
@@ -310,6 +340,20 @@ export function MiniBrowser() {
           onNavigateFromHistory={(addr) => navigateTo(addr, 'typed')}
         />
       </main>
+
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectSite={(addr) => navigateTo(addr, 'typed')}
+      />
+
+      <PublishModal
+        isOpen={isPublishOpen}
+        initialAddress={publishInitialAddress}
+        currentUser={currentUser}
+        onClose={() => setIsPublishOpen(false)}
+        onPublished={(addr) => navigateTo(addr, 'typed')}
+      />
     </div>
   );
 }
