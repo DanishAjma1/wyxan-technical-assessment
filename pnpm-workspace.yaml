@@ -7,3 +7,7 @@ onlyBuiltDependencies:
   - "sharp"
 
 verifyDepsBeforeRun: false
+fetchTimeout: 300000
+fetchRetries: 5
+allowBuilds:
+  '@nestjs/core': set this to true or false
