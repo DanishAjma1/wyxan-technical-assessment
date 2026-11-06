@@ -13,8 +13,9 @@ import { searchSites, SearchSiteResult } from '@/lib/api';
 
 interface SearchModalProps {
   isOpen: boolean;
+  initialQuery?: string;
   onClose: () => void;
-  onSelectSite: (address: string) => void;
+  onSelectSite: (address: string, queryUsed: string) => void;
 }
 
 const SUGGESTED_QUERIES = [
@@ -67,13 +68,20 @@ function HighlightedText({
 
 export function SearchModal({
   isOpen,
+  initialQuery = '',
   onClose,
   onSelectSite,
 }: SearchModalProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchSiteResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && initialQuery !== undefined) {
+      setQuery(initialQuery);
+    }
+  }, [isOpen, initialQuery]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,7 +106,7 @@ export function SearchModal({
           setIsSearching(false);
         }
       }
-    }, 150);
+    }, 120);
 
     return () => {
       cancelled = true;
@@ -199,7 +207,7 @@ export function SearchModal({
                 key={item.address}
                 type="button"
                 onClick={() => {
-                  onSelectSite(item.address);
+                  onSelectSite(item.address, query);
                   onClose();
                 }}
                 className="w-full text-left p-3.5 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 hover:border-sky-500/40 transition-all group"
@@ -237,7 +245,7 @@ export function SearchModal({
             {results.length === 1 ? 'site' : 'sites'}
             {query ? ` matching "${query}"` : ' in directory'}
           </span>
-          <span>Click any result to navigate immediately</span>
+          <span>Click any result to navigate (press Back to return to results)</span>
         </div>
       </div>
     </div>

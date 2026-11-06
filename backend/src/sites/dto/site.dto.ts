@@ -8,10 +8,10 @@ export const AddressSchema = z
   .max(120, 'Address must be 120 characters or fewer')
   .transform(normalizeAddress)
   .refine(
-    (addr) => /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[a-z0-9._-]*)?$/.test(addr),
+    (addr) => /^[a-z0-9][a-z0-9._/-]*$/.test(addr),
     {
       message:
-        'Address must be a valid domain-like address (e.g. tidepool.zz or notes.web)',
+        'Address may only contain lowercase letters, numbers, dots, hyphens, underscores, and slashes (e.g. tidepool.zz)',
     },
   );
 

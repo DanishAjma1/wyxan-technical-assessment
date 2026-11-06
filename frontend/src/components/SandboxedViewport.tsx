@@ -117,6 +117,9 @@ function buildSandboxedSrcDoc(rawHtml: string, address: string): string {
           if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth' });
           return;
         }
+        if (/^(javascript|data|vbscript|blob|mailto):/i.test(href.trim())) {
+          return;
+        }
         emitStateUpdate();
         window.parent.postMessage({
           type: 'MINI_BROWSER_NAVIGATE',
@@ -187,6 +190,12 @@ export function SandboxedViewport({
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      if (
+        iframeRef.current?.contentWindow &&
+        event.source !== iframeRef.current.contentWindow
+      ) {
+        return;
+      }
       const data = event.data;
       if (!data || typeof data !== 'object') return;
 

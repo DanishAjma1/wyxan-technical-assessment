@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "test": "node -e \"console.log('Frontend typecheck & build verified')\""
+    "test": "node --test src/frontend.spec.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.454.0",

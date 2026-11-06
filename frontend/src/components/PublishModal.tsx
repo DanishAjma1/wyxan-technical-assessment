@@ -12,11 +12,12 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { PublishSiteSchema } from '@/lib/validation';
-import { publishSite } from '@/lib/api';
+import { publishSite, UserProfile } from '@/lib/api';
 
 interface PublishModalProps {
   isOpen: boolean;
   initialAddress?: string;
+  users: UserProfile[];
   currentUser: string;
   onClose: () => void;
   onPublished: (address: string) => void;
@@ -76,12 +77,14 @@ const STARTER_TEMPLATES = [
 export function PublishModal({
   isOpen,
   initialAddress = '',
+  users,
   currentUser,
   onClose,
   onPublished,
 }: PublishModalProps) {
   const [address, setAddress] = useState(initialAddress);
   const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState(currentUser);
   const [body, setBody] = useState(STARTER_TEMPLATES[0].html);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,10 +93,11 @@ export function PublishModal({
   useEffect(() => {
     if (isOpen) {
       setAddress(initialAddress || '');
+      setAuthor(currentUser);
       setError(null);
       setActiveTab('edit');
     }
-  }, [isOpen, initialAddress]);
+  }, [isOpen, initialAddress, currentUser]);
 
   if (!isOpen) return null;
 
@@ -105,7 +109,7 @@ export function PublishModal({
       address,
       title,
       body,
-      author: currentUser,
+      author,
     });
 
     if (!parsed.success) {
@@ -151,10 +155,8 @@ export function PublishModal({
               <h2 className="text-base font-bold text-slate-100">
                 Publish a New .zz Page
               </h2>
-              <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-sky-400" />
-                Publishing as author:{' '}
-                <strong className="text-sky-300">{currentUser}</strong>
+              <p className="text-xs text-slate-400">
+                Register an address and publish raw HTML to the shared web.
               </p>
             </div>
           </div>
@@ -181,13 +183,13 @@ export function PublishModal({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label
                 htmlFor="publish-address-input"
                 className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
               >
-                Unique Custom Address
+                Unique Address
               </label>
               <div className="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 focus-within:border-sky-400">
                 <span className="text-xs font-mono text-slate-500 mr-1">
@@ -198,15 +200,11 @@ export function PublishModal({
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. atlantis.zz or studio.zz"
-                  className="flex-1 bg-transparent text-sm text-slate-100 font-mono focus:outline-none"
+                  placeholder="e.g. atlantis.zz"
+                  className="flex-1 bg-transparent text-sm text-slate-100 font-mono focus:outline-none min-w-0"
                   required
                 />
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Must be a unique domain-style address (such as{' '}
-                <code>atlantis.zz</code>).
-              </p>
             </div>
 
             <div>
@@ -225,9 +223,34 @@ export function PublishModal({
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-400"
                 required
               />
-              <p className="text-[11px] text-slate-500 mt-1">
-                Indexed for full-text search across the mini browser.
-              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="publish-author-select"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
+                Publisher
+              </label>
+              <div className="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 focus-within:border-sky-400">
+                <UserCheck className="w-4 h-4 text-sky-400 mr-2 shrink-0" />
+                <select
+                  id="publish-author-select"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-slate-100 font-medium focus:outline-none cursor-pointer"
+                >
+                  {users.map((u) => (
+                    <option
+                      key={u.name}
+                      value={u.name}
+                      className="bg-slate-900 text-slate-100"
+                    >
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

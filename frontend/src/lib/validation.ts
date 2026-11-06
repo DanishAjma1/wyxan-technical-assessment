@@ -14,13 +14,21 @@ export const AddressBarSchema = z
   .min(1, 'Please enter an address to navigate')
   .max(120, 'Address must be 120 characters or fewer')
   .transform(normalizeAddress)
-  .refine(
-    (addr) => /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[a-z0-9._-]*)?$/.test(addr),
-    {
-      message:
-        'Enter a valid custom address such as tidepool.zz, observatory.zz, or atlantis.zz',
-    },
-  );
+  .refine((addr) => addr.length > 0 && !/\s/.test(addr), {
+    message:
+      'Enter an address without spaces (e.g. tidepool.zz, observatory.zz, or nowhere.zz)',
+  });
+
+export const PublishAddressSchema = z
+  .string()
+  .trim()
+  .min(1, 'Address is required')
+  .max(120, 'Address must be 120 characters or fewer')
+  .transform(normalizeAddress)
+  .refine((addr) => /^[a-z0-9][a-z0-9._/-]*$/.test(addr), {
+    message:
+      'Address may only contain letters, numbers, dots, hyphens, underscores, and slashes (e.g. tidepool.zz)',
+  });
 
 export const UserProfileSchema = z.object({
   name: z
@@ -35,7 +43,7 @@ export const UserProfileSchema = z.object({
 });
 
 export const PublishSiteSchema = z.object({
-  address: AddressBarSchema,
+  address: PublishAddressSchema,
   title: z
     .string()
     .trim()
