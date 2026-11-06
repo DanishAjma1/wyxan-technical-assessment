@@ -31,3 +31,6 @@ pnpm-debug.log*
 *.swp
 *.swo
 *.tsbuildinfo
+
+CLAUDE.md
+FEATURES.md

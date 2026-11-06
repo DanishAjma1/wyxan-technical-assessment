@@ -1,0 +1,82 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: wyxan-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - wyxan-net
+
+  seed:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wyxan-seed
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/wyxan_mini_browser
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: ["pnpm", "seed"]
+    restart: "no"
+    networks:
+      - wyxan-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wyxan-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      PORT: 4000
+      MONGODB_URI: mongodb://mongodb:27017/wyxan_mini_browser
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/users >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - wyxan-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    container_name: wyxan-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - wyxan-net
+
+volumes:
+  mongodb_data:
+
+networks:
+  wyxan-net:
+    driver: bridge

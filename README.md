@@ -84,9 +84,30 @@ pnpm dev:backend
 pnpm dev:frontend
 ```
 
+OR
+
+```bash
+# Terminal 3: Start both NestJS API and Client in parallel
+pnpm dev
+```
+
 ### 5. Build & Run Tests
 
 ```bash
 pnpm build
 pnpm test
+```
+
+---
+
+## Running with Docker Compose
+
+A complete multi-service [`docker-compose.yml`](file:///home/danish-butt/Documents/personal-code-files/wyxan-technical-assessment/docker-compose.yml) is provided that starts MongoDB (`mongo:7`), runs the deterministic `pnpm seed` job once MongoDB is healthy, launches the NestJS backend (`:4000`), and starts the Next.js frontend (`:3000`):
+
+```bash
+# Build and start all services (MongoDB + Auto-Seed + Backend + Frontend)
+docker compose up --build
+
+# Or run only MongoDB in Docker while running Backend/Frontend locally:
+docker compose up -d mongodb
 ```
