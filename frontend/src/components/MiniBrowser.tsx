@@ -16,6 +16,8 @@ import { normalizeAddress } from '@/lib/validation';
 import { Toolbar } from './Toolbar';
 import { SandboxedViewport, PagePreservedState } from './SandboxedViewport';
 import { HistoryDrawer } from './HistoryDrawer';
+import { SearchModal } from './SearchModal';
+import { PublishModal } from './PublishModal';
 
 const DEFAULT_HOME_ADDRESS = 'tidepool.zz';
 const DEFAULT_USERS: UserProfile[] = [
@@ -39,6 +41,14 @@ function createInitialSession(): UserNavigationSession {
   };
 }
 
+function isSearchStackEntry(entry: string): boolean {
+  return entry.startsWith('search?q=');
+}
+
+function getSearchQueryFromEntry(entry: string): string {
+  return decodeURIComponent(entry.replace(/^search\?q=/, ''));
+}
+
 export function MiniBrowser() {
   const [users, setUsers] = useState<UserProfile[]>(DEFAULT_USERS);
   const [currentUser, setCurrentUser] = useState<string>('Danish');
@@ -53,6 +63,11 @@ export function MiniBrowser() {
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [searchQueryState, setSearchQueryState] = useState<string>('');
+  const [isPublishOpen, setIsPublishOpen] = useState<boolean>(false);
+  const [publishInitialAddress, setPublishInitialAddress] =
+    useState<string>('');
   const [visits, setVisits] = useState<VisitRecord[]>([]);
 
   const currentSession = sessions[currentUser] || createInitialSession();
@@ -68,6 +83,15 @@ export function MiniBrowser() {
   }, []);
 
   const resolveAddress = useCallback(async (address: string) => {
+    if (isSearchStackEntry(address)) {
+      const q = getSearchQueryFromEntry(address);
+      setSearchQueryState(q);
+      setIsSearchOpen(true);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsSearchOpen(false);
     setIsLoading(true);
     try {
       const res = await fetchSiteByAddress(address);
@@ -109,6 +133,21 @@ export function MiniBrowser() {
     };
   }, [resolveAddress, refreshHistory]);
 
+  // Keyboard shortcuts (Cmd/Ctrl+K for search, Escape to close modals)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+        setIsPublishOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Navigate to a new address (pushes onto stack and truncates forward stack)
   const navigateTo = useCallback(
     async (rawAddress: string, navType: NavigationType) => {
@@ -136,6 +175,40 @@ export function MiniBrowser() {
     [currentUser, resolveAddress, refreshHistory],
   );
 
+  // Navigate from Search Results so Back returns to the Search Results
+  const handleSelectSearchResult = useCallback(
+    async (rawAddress: string, queryUsed: string) => {
+      const address = normalizeAddress(rawAddress);
+      if (!address) return;
+      const searchEntry = `search?q=${encodeURIComponent(queryUsed.trim())}`;
+      setSearchQueryState(queryUsed.trim());
+
+      setSessions((prev) => {
+        const userSess = prev[currentUser] || createInitialSession();
+        const slicedStack = userSess.stack.slice(0, userSess.currentIndex + 1);
+        const currentTop = slicedStack[slicedStack.length - 1];
+        const stackWithSearch =
+          currentTop === searchEntry
+            ? slicedStack
+            : [...slicedStack, searchEntry];
+        const nextStack = [...stackWithSearch, address];
+        return {
+          ...prev,
+          [currentUser]: {
+            ...userSess,
+            stack: nextStack,
+            currentIndex: nextStack.length - 1,
+          },
+        };
+      });
+
+      await resolveAddress(address);
+      await recordVisit(currentUser, address, 'link');
+      await refreshHistory(currentUser);
+    },
+    [currentUser, resolveAddress, refreshHistory],
+  );
+
   const handleBack = useCallback(async () => {
     if (currentSession.currentIndex <= 0) return;
     const nextIndex = currentSession.currentIndex - 1;
@@ -153,8 +226,10 @@ export function MiniBrowser() {
     });
 
     await resolveAddress(targetAddress);
-    await recordVisit(currentUser, targetAddress, 'back');
-    await refreshHistory(currentUser);
+    if (!isSearchStackEntry(targetAddress)) {
+      await recordVisit(currentUser, targetAddress, 'back');
+      await refreshHistory(currentUser);
+    }
   }, [currentSession, currentUser, resolveAddress, refreshHistory]);
 
   const handleForward = useCallback(async () => {
@@ -174,8 +249,10 @@ export function MiniBrowser() {
     });
 
     await resolveAddress(targetAddress);
-    await recordVisit(currentUser, targetAddress, 'forward');
-    await refreshHistory(currentUser);
+    if (!isSearchStackEntry(targetAddress)) {
+      await recordVisit(currentUser, targetAddress, 'forward');
+      await refreshHistory(currentUser);
+    }
   }, [currentSession, currentUser, resolveAddress, refreshHistory]);
 
   const handleJumpToStackIndex = useCallback(
@@ -203,8 +280,10 @@ export function MiniBrowser() {
       });
 
       await resolveAddress(targetAddress);
-      await recordVisit(currentUser, targetAddress, navType);
-      await refreshHistory(currentUser);
+      if (!isSearchStackEntry(targetAddress)) {
+        await recordVisit(currentUser, targetAddress, navType);
+        await refreshHistory(currentUser);
+      }
     },
     [currentSession, currentUser, resolveAddress, refreshHistory],
   );
@@ -261,6 +340,11 @@ export function MiniBrowser() {
     [currentUser],
   );
 
+  const handleOpenPublishForAddress = useCallback((addr: string) => {
+    setPublishInitialAddress(addr);
+    setIsPublishOpen(true);
+  }, []);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       <Toolbar
@@ -280,8 +364,11 @@ export function MiniBrowser() {
         isHistoryOpen={isHistoryOpen}
         onToggleHistory={() => setIsHistoryOpen((o) => !o)}
         historyCount={visits.length}
-        onOpenSearch={() => {}}
-        onOpenPublish={() => {}}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenPublish={() => {
+          setPublishInitialAddress('');
+          setIsPublishOpen(true);
+        }}
       />
 
       <main className="flex-1 flex min-h-0 overflow-hidden relative">
@@ -297,6 +384,7 @@ export function MiniBrowser() {
           onNavigateHome={() => navigateTo(DEFAULT_HOME_ADDRESS, 'link')}
           onGoBack={handleBack}
           canGoBack={canGoBack}
+          onPublishAtAddress={handleOpenPublishForAddress}
         />
 
         <HistoryDrawer
@@ -310,6 +398,22 @@ export function MiniBrowser() {
           onNavigateFromHistory={(addr) => navigateTo(addr, 'typed')}
         />
       </main>
+
+      <SearchModal
+        isOpen={isSearchOpen}
+        initialQuery={searchQueryState}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectSite={handleSelectSearchResult}
+      />
+
+      <PublishModal
+        isOpen={isPublishOpen}
+        initialAddress={publishInitialAddress}
+        users={users}
+        currentUser={currentUser}
+        onClose={() => setIsPublishOpen(false)}
+        onPublished={(addr) => navigateTo(addr, 'typed')}
+      />
     </div>
   );
 }

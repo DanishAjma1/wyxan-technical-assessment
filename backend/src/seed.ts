@@ -620,28 +620,33 @@ interface SeedVisit {
 }
 
 // 1 full hour (0..60 minutes) of deterministic initial browsing history across users
+// Includes repeat visits, long trails, broken link attempts, and Danish visiting all 10 sites
 const VISITS: SeedVisit[] = [
-  // Danish's 1-hour browsing history
+  // Danish's 1-hour browsing history (visits all 10 sites + broken links + repeat visits)
   { userId: 'Danish', address: 'tidepool.zz', minutesOffset: 0, navigationType: 'typed' },
-  { userId: 'Danish', address: 'observatory.zz', minutesOffset: 4, navigationType: 'link' },
-  { userId: 'Danish', address: 'cipher.zz', minutesOffset: 9, navigationType: 'link' },
-  { userId: 'Danish', address: 'observatory.zz', minutesOffset: 14, navigationType: 'back' },
-  { userId: 'Danish', address: 'cipher.zz', minutesOffset: 17, navigationType: 'forward' },
-  { userId: 'Danish', address: 'archive.zz', minutesOffset: 23, navigationType: 'link' },
-  { userId: 'Danish', address: 'atlantis.zz', minutesOffset: 29, navigationType: 'link' },
-  { userId: 'Danish', address: 'archive.zz', minutesOffset: 31, navigationType: 'back' },
-  { userId: 'Danish', address: 'synthwave.zz', minutesOffset: 38, navigationType: 'link' },
-  { userId: 'Danish', address: 'recipes.zz', minutesOffset: 46, navigationType: 'typed' },
-  { userId: 'Danish', address: 'botanica.zz', minutesOffset: 52, navigationType: 'link' },
+  { userId: 'Danish', address: 'observatory.zz', minutesOffset: 3, navigationType: 'link' },
+  { userId: 'Danish', address: 'cipher.zz', minutesOffset: 7, navigationType: 'link' },
+  { userId: 'Danish', address: 'observatory.zz', minutesOffset: 10, navigationType: 'back' },
+  { userId: 'Danish', address: 'cipher.zz', minutesOffset: 13, navigationType: 'forward' },
+  { userId: 'Danish', address: 'archive.zz', minutesOffset: 17, navigationType: 'link' },
+  { userId: 'Danish', address: 'atlantis.zz', minutesOffset: 21, navigationType: 'link' },
+  { userId: 'Danish', address: 'archive.zz', minutesOffset: 23, navigationType: 'back' },
+  { userId: 'Danish', address: 'synthwave.zz', minutesOffset: 28, navigationType: 'link' },
+  { userId: 'Danish', address: 'lantern.zz', minutesOffset: 33, navigationType: 'typed' },
+  { userId: 'Danish', address: 'gazette.zz', minutesOffset: 38, navigationType: 'link' },
+  { userId: 'Danish', address: 'recipes.zz', minutesOffset: 43, navigationType: 'link' },
+  { userId: 'Danish', address: 'botanica.zz', minutesOffset: 49, navigationType: 'link' },
+  { userId: 'Danish', address: 'weather.zz', minutesOffset: 54, navigationType: 'link' },
   { userId: 'Danish', address: 'tidepool.zz', minutesOffset: 60, navigationType: 'link' },
 
-  // Elena's browsing history
+  // Elena's browsing history (long trail + repeat visits)
   { userId: 'Elena', address: 'observatory.zz', minutesOffset: 2, navigationType: 'typed' },
   { userId: 'Elena', address: 'weather.zz', minutesOffset: 11, navigationType: 'link' },
   { userId: 'Elena', address: 'phantom-reef.zz', minutesOffset: 19, navigationType: 'link' },
   { userId: 'Elena', address: 'weather.zz', minutesOffset: 21, navigationType: 'back' },
   { userId: 'Elena', address: 'gazette.zz', minutesOffset: 35, navigationType: 'typed' },
-  { userId: 'Elena', address: 'lantern.zz', minutesOffset: 49, navigationType: 'link' },
+  { userId: 'Elena', address: 'lantern.zz', minutesOffset: 44, navigationType: 'link' },
+  { userId: 'Elena', address: 'observatory.zz', minutesOffset: 51, navigationType: 'typed' },
   { userId: 'Elena', address: 'tidepool.zz', minutesOffset: 58, navigationType: 'link' },
 
   // Marcus's browsing history
@@ -649,12 +654,14 @@ const VISITS: SeedVisit[] = [
   { userId: 'Marcus', address: 'botanica.zz', minutesOffset: 16, navigationType: 'link' },
   { userId: 'Marcus', address: 'lantern.zz', minutesOffset: 25, navigationType: 'back' },
   { userId: 'Marcus', address: 'synthwave.zz', minutesOffset: 40, navigationType: 'typed' },
+  { userId: 'Marcus', address: 'archive.zz', minutesOffset: 48, navigationType: 'link' },
   { userId: 'Marcus', address: 'tidepool.zz', minutesOffset: 55, navigationType: 'link' },
 
   // Sora's browsing history
   { userId: 'Sora', address: 'botanica.zz', minutesOffset: 8, navigationType: 'typed' },
   { userId: 'Sora', address: 'recipes.zz', minutesOffset: 22, navigationType: 'link' },
   { userId: 'Sora', address: 'gazette.zz', minutesOffset: 37, navigationType: 'link' },
+  { userId: 'Sora', address: 'recipes.zz', minutesOffset: 46, navigationType: 'back' },
   { userId: 'Sora', address: 'tidepool.zz', minutesOffset: 57, navigationType: 'link' },
 ];
 
